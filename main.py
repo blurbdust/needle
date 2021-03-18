@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import re, os, sys, hexdump, uuid
+import re, os, sys, uuid
+# import hexdump 
 
-SAM_pattern		= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
+SAM_pattern			= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
 SYSTEM_pattern		= b"\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
 SECURITY_pattern	= b"e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00E\x00C\x00U\x00R\x00I\x00T\x00Y"
 
@@ -28,6 +29,7 @@ def autodump():
 	# if none are installed, output commands to do so
 	try:
 		from impacket.examples.secretsdump import LocalOperations, RemoteOperations, SAMHashes, LSASecrets, NTDSHashes
+		print("")
 		print("impacket is installed, trying to autodump SAM and LSA Secrets using secretsdump...")
 		for system in SYSTEM_filenames:
 			for sam in SAM_filenames:
@@ -42,7 +44,7 @@ def autodump():
 					__LSASecrets.dumpSecrets()
 	except NameError:
 		print("impacket not installed")
-		print("Not able to auto parse hives using existing tools. Please install one or manually test the registry hives.")
+		print("Not able to auto parse hives using existing tools. Please install impacket or manually check and dump the registry hives.")
 	except:
 		pass
 	sys.exit(0)
@@ -118,7 +120,7 @@ def main():
 	chunk = f.read(f_size - start)
 	search_chunk(chunk, chunk_num, chunk_size)
 
-	# shoutout to @knavesec for this monstrosity, summing across a list of bools hurts me
+	# shoutout to @knavesec for this monstrosity of summing across a list of bools
 	if (sum(found) >= 3):
 		autodump()
 
