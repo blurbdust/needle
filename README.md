@@ -41,11 +41,11 @@ NL$KM:6e0e6b09c158fa85e3ad464f21944dda6a1e237b67bbd302f96cccabe3dc158eeef2bb6536
 ```
 
 ## TODO
-[x] Find SAM in haystack and write to file
-[x] Find SYSTEM in haystack and write to file
-[x] Dump local hashes using secretsdump
-[x] Find SECURITY in haystack and write to file
-[x] Expand dumping to include Machine Account
-[ ] Refactor patterns into a list for easier expandability 
-[ ] Find NTDS.dit if haystack is from DC
-[ ] Speed up searching using regex 
+- [x] Find SAM in haystack and write to file
+- [x] Find SYSTEM in haystack and write to file
+- [x] Dump local hashes using secretsdump
+- [x] Find SECURITY in haystack and write to file
+- [x] Expand dumping to include Machine Account
+- [ ] Refactor patterns into a list for easier expandability 
+- [ ] Find NTDS.dit if haystack is from DC
+- [ ] Speed up searching using regex 
