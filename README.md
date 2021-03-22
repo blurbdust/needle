@@ -1,8 +1,14 @@
 # Needle
 
-Needle is a file carving utility that works very well for finding Windows centric high value files within a given haystack. This specifically was targeting Veritas NetBackup files but it works for any large block of data.
+Needle is a file carving utility that works very well for finding Windows centric high value files within a given haystack. This specifically was targeting Veritas NetBackup files but it works for any large block of data such as a tar file.
 
 It specifically looks for the on disk versions of SAM, SECURITY, and SYSTEM registry hives and carve those files out of the blob of data. If impacket is installed, it will utilize secretsdump to automatically dump secrets from the hives. 
+
+## Why?
+We were on an Internal pen test where the client had unauthenticated access to a NFS share which contained backups of several High Value Targets including their DC. The backup images were created by NetBackup and were a non-standard tar file that we were unable to easily extract or exfiltrate due to the large size of the image (130+ GB). We created this tool to automate a process done manually during the test in order to gain access to the machine account in order to DCSYNC the DC and get DA. 
+
+## Notes
+If the haystack is a true backup of a Windows computer, it is very likely there will be multiple copies of the registry hive on disk due to Windows keeping a copy for recovery purposes. If local or LSA secrets is output multiple times with the same data, this is likely the reasoning. 
 
 ## Usage
 ```
@@ -10,8 +16,8 @@ python3 main.py /path/to/haystack
 ```
 
 ## Expected Output
+`python3 main.py /mnt/large.vm.backup.tar`
 ```
-time python3 main.py /mnt/large.vm.backup.tar
 Potentially found SAM at offset 2170928 within searched chunk 977. Writing to 905b5cd4-f9bf-421f-916c-531ad97b5d34_SAM
 Potentially found SECURITY at offset 2461744 within searched chunk 977. Writing to de639e0e-a5ad-4d2e-aff2-b415c0087604_SECURITY
 Potentially found SYSTEM at offset 3129391 within searched chunk 984. Writing to d20cc9ed-25ec-4f48-9a5d-f009ec73ccd2_SYSTEM
@@ -20,6 +26,7 @@ Potentially found SECURITY at offset 1708080 within searched chunk 1165. Writing
 Potentially found SAM at offset 2125872 within searched chunk 3397. Writing to de0c2e6b-6f86-431d-a8bd-5e3e8c0c53c3_SAM
 Potentially found SECURITY at offset 364592 within searched chunk 24271. Writing to a134d5bb-d583-4c97-9926-7fa68367a788_SECURITY
 Potentially found SYSTEM at offset 1966127 within searched chunk 33848. Writing to ccf58b55-3cef-4764-acf2-772c2c575cda_SYSTEM
+
 impacket is installed, trying to autodump SAM and LSA Secrets using secretsdump...
 
 Administrator:500:aad3b435b51404eeaad3b435b51404ee:b4b9b02e6f09a9bd760f388b67351e2b:::
@@ -36,3 +43,14 @@ NL$KM
  0030   9F 40 5B F9 22 E8 0F 72  81 0F A7 21 4F BE 4F 29   .@[."..r...!O.O)
 NL$KM:6e0e6b09c158fa85e3ad464f21944dda6a1e237b67bbd302f96cccabe3dc158eeef2bb6536b1ff293474be69020c9aaa9f405bf922e80f72810fa7214fbe4f29
 ```
+
+## TODO
+- [x] Find SAM in haystack and write to file
+- [x] Find SYSTEM in haystack and write to file
+- [x] Dump local hashes using secretsdump
+- [x] Find SECURITY in haystack and write to file
+- [x] Expand dumping to include Machine Account
+- [ ] Refactor patterns into a list for easier expandability 
+- [x] Find ESE DBs if haystack is from DC
+- [ ] Check if ESE DB is NTDS.dit if haystack is from DC
+~- [ ] Speed up searching using regex ~ It actually slows it down by a factor of 3

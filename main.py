@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import re, os, sys, hexdump, uuid
+import os, sys, uuid
+#import hexdump, re
 
 SAM_pattern		= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
 SYSTEM_pattern		= b"\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
@@ -33,6 +34,7 @@ def autodump(sam, system, security, ntds):
 	try:
 		# https://github.com/SecureAuthCorp/impacket/blob/master/examples/secretsdump.py#L58
 		from impacket.examples.secretsdump import LocalOperations, SAMHashes, LSASecrets, NTDSHashes
+		print("")
 		print("impacket is installed, trying to autodump SAM and LSA Secrets using secretsdump...")
 
 		for _system in SYSTEM_filenames:
@@ -58,7 +60,7 @@ def autodump(sam, system, security, ntds):
 				__LSASecrets.dumpSecrets()
 	except NameError:
 		print("impacket not installed")
-		print("Not able to auto parse hives using existing tools. Please install one or manually test the registry hives.")
+		print("Not able to auto parse hives using existing tools. Please install impacket or manually check and dump the registry hives.")
 	except:
 		pass
 	sys.exit(0)
