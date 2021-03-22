@@ -53,4 +53,5 @@ NL$KM:6e0e6b09c158fa85e3ad464f21944dda6a1e237b67bbd302f96cccabe3dc158eeef2bb6536
 - [ ] Refactor patterns into a list for easier expandability 
 - [x] Find ESE DBs if haystack is from DC
 - [ ] Check if ESE DB is NTDS.dit if haystack is from DC
+
 ~ Speed up searching using regex ~ It actually slows it down by a factor of 3
