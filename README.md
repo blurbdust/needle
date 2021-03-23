@@ -1,11 +1,13 @@
 # Needle
 
-Needle is a file carving utility that works very well for finding Windows centric high value files within a given haystack. This specifically was targeting Veritas NetBackup files but it works for any large block of data such as a tar file.
+Needle is a file carving utility that works very well for finding Windows centric high value files within a given haystack. This specifically was targeting Veritas NetBackup files but it works for any large block of data such as a tar or VHD file.
 
 It specifically looks for the on disk versions of SAM, SECURITY, and SYSTEM registry hives and carve those files out of the blob of data. If impacket is installed, it will utilize secretsdump to automatically dump secrets from the hives. 
 
 ## Why?
 We were on an Internal pen test where the client had unauthenticated access to a NFS share which contained backups of several High Value Targets including their DC. The backup images were created by NetBackup and were a non-standard tar file that we were unable to easily extract or exfiltrate due to the large size of the image (130+ GB). We created this tool to automate a process done manually during the test in order to gain access to the machine account in order to DCSYNC the DC and get DA. 
+
+Also Bastion on Hack The Box is a thing. 
 
 ## Notes
 If the haystack is a true backup of a Windows computer, it is very likely there will be multiple copies of the registry hive on disk due to Windows keeping a copy for recovery purposes. If local or LSA secrets is output multiple times with the same data, this is likely the reasoning. 
@@ -55,6 +57,6 @@ NL$KM:6e0e6b09c158fa85e3ad464f21944dda6a1e237b67bbd302f96cccabe3dc158eeef2bb6536
 - [ ] Add flag to only look for system, sam, security, etc 
 - [ ] Add flag to change output directory
 - [ ] Add flag to only search misaligned (debug)
-- [ ] Add in ability to find multiple copies within given chunk
+- [x] Add in ability to find multiple copies within given chunk
 - [x] Find ESE DBs if haystack is from DC
 - [ ] Check if ESE DB is NTDS.dit if haystack is from DC
