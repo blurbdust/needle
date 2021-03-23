@@ -54,5 +54,7 @@ NL$KM:6e0e6b09c158fa85e3ad464f21944dda6a1e237b67bbd302f96cccabe3dc158eeef2bb6536
 - [ ] Add ability to skip to certain chunks if ran before
 - [ ] Add flag to only look for system, sam, security, etc 
 - [ ] Add flag to change output directory
+- [ ] Add flag to only search misaligned (debug)
+- [ ] Add in ability to find multiple copies within given chunk
 - [x] Find ESE DBs if haystack is from DC
 - [ ] Check if ESE DB is NTDS.dit if haystack is from DC
