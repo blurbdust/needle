@@ -1,22 +1,7 @@
 #!/usr/bin/env python3
 
-'''
-+--556317 lines: 00000000  72 65 67 66 41 03 00 00  41 03 00 00 1b 6c f6 44  |regfA...A....l.D|-----|+ +--556317 lines: 00000000  72 65 67 66 41 03 00 00  41 03 00 00 1b 6c f6 44  |regfA...A....l.D|----
-  00893fa0  00 00 00 00 00 00 00 00  08 00 00 00 04 00 00 00  |................|                      |  00893fa0  00 00 00 00 00 00 00 00  08 00 00 00 04 00 00 00  |................|
-  00893fb0  00 00 00 00 08 00 00 00  30 30 30 30 30 30 30 30  |........00000000|                      |  00893fb0  00 00 00 00 08 00 00 00  30 30 30 30 30 30 30 30  |........00000000|
-  00893fc0  f0 ff ff ff 6c 68 01 00  68 2f 89 00 80 6e c9 6a  |....lh..h/...n.j|                      |  00893fc0  f0 ff ff ff 6c 68 01 00  68 2f 89 00 80 6e c9 6a  |....lh..h/...n.j|
-  00893fd0  e0 ff ff ff 76 6b 04 00  04 00 00 80 07 00 00 00  |....vk..........|                      |  00893fd0  e0 ff ff ff 76 6b 04 00  04 00 00 80 07 00 00 00  |....vk..........|
-  00893fe0  03 00 00 00 01 00 00 00  54 79 70 65 00 00 00 00  |........Type....|                      |  00893fe0  03 00 00 00 01 00 00 00  54 79 70 65 00 00 00 00  |........Type....|
-  00893ff0  f0 ff ff ff d0 2f 89 00  20 30 89 00 00 00 00 00  |...../.. 0......|                      |  00893ff0  f0 ff ff ff d0 2f 89 00  20 30 89 00 00 00 00 00  |...../.. 0......|
-  00894000  68 62 69 6e 00 30 89 00  00 10 00 00 00 00 00 00  |hbin.0..........|                      |  00894000  ff ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |................|                     
-  00894010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|                      |  *                                                                                                  
-  00894020  e0 ff ff ff 76 6b 04 00  04 00 00 80 01 00 ff 00  |....vk..........|                      |  00894200  68 62 69 6e 00 30 89 00  00 10 00 00 00 00 00 00  |hbin.0..........|                     
-  00894030  03 00 00 00 01 00 00 00  44 61 74 61 00 00 00 00  |........Data....|                      |  00894210  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|                 
-'''
-
-
 import os, sys, uuid
-import hexdump, re
+#import hexdump, re
 
 SAM_pattern		= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
 SYSTEM_pattern		= b"\x00\x00\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
@@ -81,6 +66,7 @@ def autodump(sam, system, security, ntds):
 		if security and system:
 			for _security in SECURITY_filenames:
 				print("")
+				# sometimes this isn't hit and idk why
 				__LSASecrets = LSASecrets(_security, bootKey, None, isRemote=False, history=False)
 				__LSASecrets.dumpSecrets()
 	except NameError:
