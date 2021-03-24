@@ -1,10 +1,25 @@
 #!/usr/bin/env python3
 
+'''
++--556317 lines: 00000000  72 65 67 66 41 03 00 00  41 03 00 00 1b 6c f6 44  |regfA...A....l.D|-----|+ +--556317 lines: 00000000  72 65 67 66 41 03 00 00  41 03 00 00 1b 6c f6 44  |regfA...A....l.D|----
+  00893fa0  00 00 00 00 00 00 00 00  08 00 00 00 04 00 00 00  |................|                      |  00893fa0  00 00 00 00 00 00 00 00  08 00 00 00 04 00 00 00  |................|
+  00893fb0  00 00 00 00 08 00 00 00  30 30 30 30 30 30 30 30  |........00000000|                      |  00893fb0  00 00 00 00 08 00 00 00  30 30 30 30 30 30 30 30  |........00000000|
+  00893fc0  f0 ff ff ff 6c 68 01 00  68 2f 89 00 80 6e c9 6a  |....lh..h/...n.j|                      |  00893fc0  f0 ff ff ff 6c 68 01 00  68 2f 89 00 80 6e c9 6a  |....lh..h/...n.j|
+  00893fd0  e0 ff ff ff 76 6b 04 00  04 00 00 80 07 00 00 00  |....vk..........|                      |  00893fd0  e0 ff ff ff 76 6b 04 00  04 00 00 80 07 00 00 00  |....vk..........|
+  00893fe0  03 00 00 00 01 00 00 00  54 79 70 65 00 00 00 00  |........Type....|                      |  00893fe0  03 00 00 00 01 00 00 00  54 79 70 65 00 00 00 00  |........Type....|
+  00893ff0  f0 ff ff ff d0 2f 89 00  20 30 89 00 00 00 00 00  |...../.. 0......|                      |  00893ff0  f0 ff ff ff d0 2f 89 00  20 30 89 00 00 00 00 00  |...../.. 0......|
+  00894000  68 62 69 6e 00 30 89 00  00 10 00 00 00 00 00 00  |hbin.0..........|                      |  00894000  ff ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |................|                     
+  00894010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|                      |  *                                                                                                  
+  00894020  e0 ff ff ff 76 6b 04 00  04 00 00 80 01 00 ff 00  |....vk..........|                      |  00894200  68 62 69 6e 00 30 89 00  00 10 00 00 00 00 00 00  |hbin.0..........|                     
+  00894030  03 00 00 00 01 00 00 00  44 61 74 61 00 00 00 00  |........Data....|                      |  00894210  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|                 
+'''
+
+
 import os, sys, uuid
 import hexdump, re
 
 SAM_pattern		= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
-SYSTEM_pattern		= b"\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
+SYSTEM_pattern		= b"\x00\x00\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
 SECURITY_pattern	= b"e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00E\x00C\x00U\x00R\x00I\x00T\x00Y"
 NTDS_pattern 		= b"\x20\x06\x00\x00\x00\x00\x00\x00"
 SAM_filenames		= []
@@ -79,7 +94,7 @@ def search_chunk(chunk, chunk_num, chunk_size, misaligned):
 	_temp_SAM = cust_findall(chunk, SAM_pattern)
 	_temp_SYSTEM = cust_findall(chunk, SYSTEM_pattern)
 	_temp_SECURITY = cust_findall(chunk, SECURITY_pattern)
-	_temp_NTDS = cust_findall(chunk, NTDS_pattern)
+#	_temp_NTDS = cust_findall(chunk, NTDS_pattern)
 
 	for temp_SAM in _temp_SAM:
 		# potential SAM found
@@ -99,8 +114,9 @@ def search_chunk(chunk, chunk_num, chunk_size, misaligned):
 				g.close()
 			found[0] = True
 	for temp_SYSTEM in _temp_SYSTEM:
-		# potential SYSTEM found; 0x2F since we search by \x00S to rule out false positives
-		if (b"regf" in chunk[temp_SYSTEM - 0x2F : temp_SYSTEM - 0x2F + 0x4 ]):
+		# potential SYSTEM found; 0x2F since we search by \x00\x00\x00S to rule out false positives
+#		print(hexdump.hexdump(chunk[temp_SYSTEM - 0x2F : temp_SYSTEM + len(SYSTEM_pattern)]))
+		if (b"regf" in chunk[temp_SYSTEM - 0x2D : temp_SYSTEM - 0x2D + 0x4 ]):
 			tmp_name = str(uuid.uuid4()) + "_SYSTEM"
 			SYSTEM_filenames.append(tmp_name)
 			print("Potentially found SYSTEM at offset {} within searched chunk {}. Writing to {}".format(temp_SYSTEM, chunk_num, tmp_name))
@@ -108,11 +124,24 @@ def search_chunk(chunk, chunk_num, chunk_size, misaligned):
 			with open(tmp_name, "wb") as SYSTEM:
 				g = open(filename, 'rb')
 				if misaligned:
-					g.seek((chunk_size) + ((chunk_num - 1) * chunk_size) + (temp_SYSTEM - 0x2F))
+					g.seek((chunk_size) + ((chunk_num - 1) * chunk_size) + (temp_SYSTEM - 0x2D))
 				else:
-					g.seek(((chunk_num - 1) * chunk_size) + (temp_SYSTEM - 0x2F))
+					g.seek(((chunk_num - 1) * chunk_size) + (temp_SYSTEM - 0x2D))
 				# 16MB is supposedly max size of registry hives on disk; impacket doesn't seem to have a problem with extra data at the end of the registry hives.
-				SYSTEM.write(g.read(min(f_size, 17000000)))
+				# try and fix up dirty registry hives
+				small_chunk = g.read(min(f_size, 17000000))
+				last_yeet = 0
+				to_write = b""
+				for yeet in cust_findall(small_chunk, b"\xFF"*0x200):
+					if small_chunk[ yeet - 0x1 ] == b"\xFF":
+						to_write += small_chunk[ last_yeet : yeet ]
+						last_yeet = yeet
+					elif small_chunk[ yeet + 0x200 : yeet + 0x205 ] == b"hbin\x00":
+						# trim
+						to_write += small_chunk[ last_yeet : yeet ]
+						last_yeet = yeet + 0x200
+				to_write += small_chunk[ yeet : ]
+				SYSTEM.write(to_write)
 				g.close()
 			found[1] = True
 	for temp_SECURITY in _temp_SECURITY:
