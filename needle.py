@@ -3,28 +3,29 @@
 import os, sys, uuid
 #import hexdump, re
 
-SAM_pattern		= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
-SYSTEM_pattern		= b"\x00\x00\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
-SECURITY_pattern	= b"e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00E\x00C\x00U\x00R\x00I\x00T\x00Y"
-NTDS_pattern 		= b"\x20\x06\x00\x00\x00\x00\x00\x00"
-SAM_filenames		= []
-SYSTEM_filenames	= []
-SECURITY_filenames	= []
-NTDS_filenames		= []
+def init():
+	SAM_pattern		= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
+	SYSTEM_pattern		= b"\x00\x00\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
+	SECURITY_pattern	= b"e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00E\x00C\x00U\x00R\x00I\x00T\x00Y"
+	NTDS_pattern 		= b"\x20\x06\x00\x00\x00\x00\x00\x00"
+	SAM_filenames		= []
+	SYSTEM_filenames	= []
+	SECURITY_filenames	= []
+	NTDS_filenames		= []
 
-#	 SAM, SYSTEM, SECURITY, NTDS
-found = [False, False, False, False]
+	#	 SAM, SYSTEM, SECURITY, NTDS
+	found = [False, False, False, False]
 
-if (len(sys.argv) < 2):
-	print("Please provide a filename to run on")
-if (sys.argv[1] == "-h" or sys.argv[1] == "--help"):
-	print("Useage: ")
-	print("python3 {} /path/to/filename/to/search".format(sys.argv[0]))
+#if (len(sys.argv) < 2):
+#	print("Please provide a filename to run on")
+#if (sys.argv[1] == "-h" or sys.argv[1] == "--help"):
+#	print("Useage: ")
+#	print("python3 {} /path/to/filename/to/search".format(sys.argv[0]))
 
-filename = sys.argv[1]
+#	filename = sys.argv[1]
 
-f = open(filename, 'rb')
-f_size = os.stat(filename).st_size
+	f = open(haystack, 'rb')
+	f_size = os.stat(haystack).st_size
 
 # https://stackoverflow.com/questions/4664850/how-to-find-all-occurrences-of-a-substring
 def cust_findall(string, substring):
@@ -211,4 +212,22 @@ def main():
 		end += chunk_size
 
 	check()
-main()
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(
+			formatter_class=argparse.RawDescriptionHelpFormatter,
+			description='Process a large haystack looking for high value files from Windows. Specifically SAM, SECURITY, and SYSTEM hives.',
+			epilog=textwrap.dedent('''Examples:\npython3 needle.py /mnt/HTB/Bastion/file.vhd --hacky-clean\npython3 needle.py /mnt/VeritasNetbackup/dc.tar''')
+	)
+	# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+	parser.add_argument('--hacky-clean', type=str2bool, nargs='?', const=True, default=False, help="Clean dirty on disk registry keys in a very hacky way that somehow works (usually needed for vhd)")
+	parser.add_argument('--auto-dump', type=str2bool, nargs='?', const=True, default=True,, help="Try to automatically use secretsdump if SAM and SYSTEM or SYSTEM and SECURITY are found")
+	parser.add_argument('haystack', metavar='haystack', type=str, nargs='*', help='Haystack to parse')
+
+	args = parser.parse_args()
+
+	if (args.haystack != None):
+		#do things
+		init(haystack)
+	else:
+		parser.print_help()

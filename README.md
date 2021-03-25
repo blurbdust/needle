@@ -52,6 +52,7 @@ NL$KM:6e0e6b09c158fa85e3ad464f21944dda6a1e237b67bbd302f96cccabe3dc158eeef2bb6536
 - [x] Dump local hashes using secretsdump
 - [x] Find SECURITY in haystack and write to file
 - [x] Expand dumping to include Machine Account
+- [ ] Refactor to use argparse (WIP)
 - [ ] Refactor patterns into a list for easier expandability
 - [ ] Add ability to skip to certain chunks if ran before
 - [ ] Add flag to only look for system, sam, security, etc 
