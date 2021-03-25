@@ -16,7 +16,7 @@ NTDS_filenames		= []
 found = [False, False, False, False]
 
 
-def init(haystack):
+def init(haystack, clean, no_auto_dump):
 
 #if (len(sys.argv) < 2):
 #	print("Please provide a filename to run on")
@@ -28,19 +28,7 @@ def init(haystack):
 
 	f = open(haystack, 'rb')
 	f_size = os.stat(haystack).st_size
-	main(f, f_size)
-
-
-# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
-def str2bool(v):
-	if isinstance(v, bool):
-		return v
-	if v.lower() in ('yes', 'true', 't', 'y', '1'):
-		return True
-	elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-		return False
-	else:
-		raise argparse.ArgumentTypeError('Boolean value expected.')
+	main(f, f_size, clean, no_auto_dump)
 
 # https://stackoverflow.com/questions/4664850/how-to-find-all-occurrences-of-a-substring
 def cust_findall(string, substring):
@@ -78,21 +66,27 @@ def autodump(sam, system, security, ntds):
 				__SAMHashes = SAMHashes(_sam, bootKey, isRemote=False)
 				print("")
 				# https://github.com/SecureAuthCorp/impacket/blob/master/examples/secretsdump.py#L169
-				__SAMHashes.dump()
+				try:
+					__SAMHashes.dump()
+				except:
+					pass
+
 		if security and system:
 			for _security in SECURITY_filenames:
-				print("")
-				# sometimes this isn't hit and idk why
+				# sometimes this isn't hit and idk why. future nic here, it's because of the cleaning, 
+				# it caused an exception and we'd skip to the end without dumping LSA
 				__LSASecrets = LSASecrets(_security, bootKey, None, isRemote=False, history=False)
-				__LSASecrets.dumpSecrets()
+				try:
+					__LSASecrets.dumpSecrets()
+					print("")
+				except:
+					pass
 	except NameError:
 		print("Not able to auto parse hives using existing tools. Please install impacket or manually check and dump the registry hives.")
 	except:
 		pass
-	#sys.exit(0)
 
-
-def search_chunk(chunk, chunk_num, chunk_size, misaligned):
+def search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, misaligned, clean):
 	_temp_SAM = cust_findall(chunk, SAM_pattern)
 	_temp_SYSTEM = cust_findall(chunk, SYSTEM_pattern)
 	_temp_SECURITY = cust_findall(chunk, SECURITY_pattern)
@@ -106,7 +100,7 @@ def search_chunk(chunk, chunk_num, chunk_size, misaligned):
 			SAM_filenames.append(tmp_name)
 			print("Potentially found SAM at offset {} within searched chunk {}. Writing to {}".format(temp_SAM, chunk_num, tmp_name))
 			with open(tmp_name, "wb") as SAM:
-				g = open(filename, 'rb')
+				g = open(haystack, 'rb')
 				if misaligned:
 					g.seek((chunk_size) + ((chunk_num - 1) * chunk_size) + (temp_SAM - 0x30))
 				else:
@@ -124,7 +118,7 @@ def search_chunk(chunk, chunk_num, chunk_size, misaligned):
 			print("Potentially found SYSTEM at offset {} within searched chunk {}. Writing to {}".format(temp_SYSTEM, chunk_num, tmp_name))
 			#print(hexdump.hexdump(chunk[temp_SYSTEM - 0x2F : temp_SYSTEM + len(SYSTEM_pattern)]))
 			with open(tmp_name, "wb") as SYSTEM:
-				g = open(filename, 'rb')
+				g = open(haystack, 'rb')
 				if misaligned:
 					g.seek((chunk_size) + ((chunk_num - 1) * chunk_size) + (temp_SYSTEM - 0x2D))
 				else:
@@ -134,15 +128,16 @@ def search_chunk(chunk, chunk_num, chunk_size, misaligned):
 				small_chunk = g.read(min(f_size, 17000000))
 				last_yeet = 0
 				to_write = b""
-				for yeet in cust_findall(small_chunk, b"\xFF"*0x200):
-					if small_chunk[ yeet - 0x1 ] == b"\xFF":
-						to_write += small_chunk[ last_yeet : yeet ]
-						last_yeet = yeet
-					elif small_chunk[ yeet + 0x200 : yeet + 0x205 ] == b"hbin\x00":
-						# trim
-						to_write += small_chunk[ last_yeet : yeet ]
-						last_yeet = yeet + 0x200
-				to_write += small_chunk[ yeet : ]
+				if (clean):
+					for yeet in cust_findall(small_chunk, b"\xFF"*0x200):
+						if small_chunk[ yeet - 0x1 ] == b"\xFF":
+							to_write += small_chunk[ last_yeet : yeet ]
+							last_yeet = yeet
+						elif small_chunk[ yeet + 0x200 : yeet + 0x205 ] == b"hbin\x00":
+							# trim
+							to_write += small_chunk[ last_yeet : yeet ]
+							last_yeet = yeet + 0x200
+				to_write += small_chunk[ last_yeet : ]
 				SYSTEM.write(to_write)
 				g.close()
 			found[1] = True
@@ -154,7 +149,7 @@ def search_chunk(chunk, chunk_num, chunk_size, misaligned):
 			SECURITY_filenames.append(tmp_name)
 			print("Potentially found SECURITY at offset {} within searched chunk {}. Writing to {}".format(temp_SECURITY, chunk_num, tmp_name))
 			with open(tmp_name, "wb") as SECURITY:
-				g = open(filename, 'rb')
+				g = open(haystack, 'rb')
 				if misaligned:
 					g.seek((chunk_size) + ((chunk_num - 1) * chunk_size) + (temp_SECURITY - 0x30))
 				else:
@@ -175,20 +170,20 @@ def search_chunk(chunk, chunk_num, chunk_size, misaligned):
 #							NTDS_filenames.append(tmp_name)
 #							print("Potentially found Microsoft ESEDB, treating as NTDS at offset {} within searched chunk {}. Writing to {}".format(temp_NTDS - 8, chunk_num, tmp_name))
 #							with open(tmp_name, "wb") as NTDS:
-#								g = open(filename, 'rb')
+#								g = open(haystack, 'rb')
 #								g.seek(((chunk_num - 1) * chunk_size) + (temp_NTDS - 0x8))
 #								# 16MB is supposedly max size of registry hives on disk; impacket doesn't seem to have a problem with extra data at the end of the registry hives.
 #								NTDS.write(g.read(min(f_size, 16 * 1024 * 1024)))
 #								g.close()
 #							found[3] = True
 
-def check():
+def check(no_auto_dump):
 	# shoutout to @knavesec for this monstrosity, summing across a list of bools hurts me
-	if ((found[1] == True) and (sum(found) >= 2)):
+	if ((not no_auto_dump) and ((found[1] == True) and (sum(found) >= 2))):
 		autodump(found[0], found[1], found[2], found[3])
 
 
-def main(f, f_size):
+def main(f, f_size, clean, no_auto_dump):
 	# reading in chunks and scanning through the chunks, if we don't find anything, maybe our chunks were too small and the pattern was at the boundry of chunks so we need to seek by chunk / 2 and scan again
 
 	chunk_size = 4 * 1024 * 1024 # 4MiB
@@ -200,7 +195,7 @@ def main(f, f_size):
 		f.seek(start)
 		chunk = f.read(chunk_size)
 		chunk_num += 1
-		if (search_chunk(chunk, chunk_num, chunk_size, False) == True):
+		if (search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean) == True):
 			break
 		start = end
 		end += chunk_size
@@ -208,9 +203,9 @@ def main(f, f_size):
 	# finish last partial chunk just in case
 	f.seek(start)
 	chunk = f.read(f_size - start)
-	search_chunk(chunk, chunk_num, chunk_size, False)
+	search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean)
 
-	check()
+	check(no_auto_dump)
 
 	# misalign and search the new chunks in case the \x00S\x00A\x00M and regf are across chunk boundries
 	chunk_size = chunk_size // 4
@@ -221,12 +216,12 @@ def main(f, f_size):
 		f.seek(start)
 		chunk = f.read(chunk_size)
 		chunk_num += 1
-		if (search_chunk(chunk, chunk_num, chunk_size, True) == True):
+		if (search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean) == True):
 			break
 		start = end
 		end += chunk_size
 
-	check()
+	check(no_auto_dump)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
@@ -235,8 +230,8 @@ if __name__ == '__main__':
 			epilog=textwrap.dedent('''Examples:\npython3 needle.py /mnt/HTB/Bastion/file.vhd --hacky-clean\npython3 needle.py /mnt/VeritasNetbackup/dc.tar''')
 	)
 	# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
-	parser.add_argument('--hacky-clean', type=str2bool, nargs='?', const=True, default=False, help="Clean dirty on disk registry keys in a very hacky way that somehow works (usually needed for vhd)")
-	parser.add_argument('--auto-dump', type=str2bool, nargs='?', const=True, default=True, help="Try to automatically use secretsdump if SAM and SYSTEM or SYSTEM and SECURITY are found")
+	parser.add_argument('--clean', action='store_true', default=False, help="Clean dirty on disk registry keys in a very hacky way that somehow works (usually needed for vhd)")
+	parser.add_argument('--no-auto-dump', action='store_true', default=False, help="Try to automatically use secretsdump if SAM and SYSTEM or SYSTEM and SECURITY are found")
 	parser.add_argument('haystack', metavar='haystack', type=str, nargs='*', help='Haystack to parse')
 
 	args = parser.parse_args()
@@ -244,6 +239,6 @@ if __name__ == '__main__':
 	if (args.haystack != None):
 		#do things
 		for haystack in args.haystack:
-			init(haystack)
+			init(haystack, args.clean, args.no_auto_dump)
 	else:
 		parser.print_help()

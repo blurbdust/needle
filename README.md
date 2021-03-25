@@ -14,11 +14,11 @@ If the haystack is a true backup of a Windows computer, it is very likely there 
 
 ## Usage
 ```
-python3 main.py /path/to/haystack
+python3 needle.py /path/to/haystack
 ```
 
 ## Expected Output
-`python3 main.py /mnt/large.vm.backup.tar`
+`python3 needle.py /mnt/large.vm.backup.tar`
 ```
 Potentially found SAM at offset 2170928 within searched chunk 977. Writing to 905b5cd4-f9bf-421f-916c-531ad97b5d34_SAM
 Potentially found SECURITY at offset 2461744 within searched chunk 977. Writing to de639e0e-a5ad-4d2e-aff2-b415c0087604_SECURITY
@@ -52,7 +52,7 @@ NL$KM:6e0e6b09c158fa85e3ad464f21944dda6a1e237b67bbd302f96cccabe3dc158eeef2bb6536
 - [x] Dump local hashes using secretsdump
 - [x] Find SECURITY in haystack and write to file
 - [x] Expand dumping to include Machine Account
-- [ ] Refactor to use argparse (WIP)
+- [x] Refactor to use argparse
 - [ ] Refactor patterns into a list for easier expandability
 - [ ] Add ability to skip to certain chunks if ran before
 - [ ] Add flag to only look for system, sam, security, etc 
