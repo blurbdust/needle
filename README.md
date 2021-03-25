@@ -9,12 +9,34 @@ We were on an Internal pen test where the client had unauthenticated access to a
 
 Also Bastion on Hack The Box is a thing. 
 
+#### No, why isn't this a PR to foremost or binwalk?
+...good question
+
 ## Notes
 If the haystack is a true backup of a Windows computer, it is very likely there will be multiple copies of the registry hive on disk due to Windows keeping a copy for recovery purposes. If local or LSA secrets is output multiple times with the same data, this is likely the reasoning. 
 
 ## Usage
 ```
-python3 needle.py /path/to/haystack
+usage: needle.py [-h] [-c] [-n] [-o OUTPUT] [haystack [haystack ...]]
+
+Process a large haystack looking for high value files from Windows. Specifically SAM, SECURITY, and SYSTEM hives.
+
+positional arguments:
+  haystack              Haystack to parse
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c, --clean           Clean dirty on disk registry keys in a very hacky way
+                        that somehow works (usually needed for vhd)
+  -n, --no-auto-dump    Try to automatically use secretsdump if SAM and SYSTEM
+                        or SYSTEM and SECURITY are found
+  -o OUTPUT, --output OUTPUT
+                        Output Directory for registry hives, default: current
+                        directory
+
+Examples:
+python3 needle.py /mnt/HTB/Bastion/file.vhd --clean
+python3 needle.py /mnt/VeritasNetbackup/dc.tar
 ```
 
 ## Expected Output
@@ -56,7 +78,7 @@ NL$KM:6e0e6b09c158fa85e3ad464f21944dda6a1e237b67bbd302f96cccabe3dc158eeef2bb6536
 - [ ] Refactor patterns into a list for easier expandability
 - [ ] Add ability to skip to certain chunks if ran before
 - [ ] Add flag to only look for system, sam, security, etc 
-- [ ] Add flag to change output directory
+- [x] Add flag to change output directory
 - [ ] Add flag to only search misaligned (debug)
 - [x] Add in ability to find multiple copies within given chunk
 - [x] Find ESE DBs if haystack is from DC

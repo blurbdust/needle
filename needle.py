@@ -16,7 +16,7 @@ NTDS_filenames		= []
 found = [False, False, False, False]
 
 
-def init(haystack, clean, no_auto_dump):
+def init(haystack, clean, no_auto_dump, output):
 
 #if (len(sys.argv) < 2):
 #	print("Please provide a filename to run on")
@@ -28,7 +28,7 @@ def init(haystack, clean, no_auto_dump):
 
 	f = open(haystack, 'rb')
 	f_size = os.stat(haystack).st_size
-	main(f, f_size, clean, no_auto_dump)
+	main(f, f_size, clean, no_auto_dump, output)
 
 # https://stackoverflow.com/questions/4664850/how-to-find-all-occurrences-of-a-substring
 def cust_findall(string, substring):
@@ -86,17 +86,25 @@ def autodump(sam, system, security, ntds):
 	except:
 		pass
 
-def search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, misaligned, clean):
+def search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, misaligned, clean, output):
 	_temp_SAM = cust_findall(chunk, SAM_pattern)
 	_temp_SYSTEM = cust_findall(chunk, SYSTEM_pattern)
 	_temp_SECURITY = cust_findall(chunk, SECURITY_pattern)
 #	_temp_NTDS = cust_findall(chunk, NTDS_pattern)
 
+	# https://github.com/knavesec/Max/blob/24ea388bf004557ab4662294f11a2e9e75756f6b/max.py#L1236 
+	if output:
+		if not os.path.exists(args.output):
+			os.makedirs(args.output)
+
 	for temp_SAM in _temp_SAM:
 		# potential SAM found
 		# print(hexdump.hexdump(chunk[temp_SAM - 0x30 : temp_SAM + len(SAM_pattern)]))
 		if (b"regf" in chunk[temp_SAM - 0x30 : temp_SAM - 0x30 + 0x4]):
-			tmp_name = str(uuid.uuid4()) + "_SAM"
+			if (output != None):
+				tmp_name = os.path.join(os.path.curdir, output, str(uuid.uuid4()) + "_SAM")
+			else:
+				tmp_name = str(uuid.uuid4()) + "_SAM"
 			SAM_filenames.append(tmp_name)
 			print("Potentially found SAM at offset {} within searched chunk {}. Writing to {}".format(temp_SAM, chunk_num, tmp_name))
 			with open(tmp_name, "wb") as SAM:
@@ -113,7 +121,10 @@ def search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, misaligned, cle
 		# potential SYSTEM found; 0x2F since we search by \x00\x00\x00S to rule out false positives
 #		print(hexdump.hexdump(chunk[temp_SYSTEM - 0x2F : temp_SYSTEM + len(SYSTEM_pattern)]))
 		if (b"regf" in chunk[temp_SYSTEM - 0x2D : temp_SYSTEM - 0x2D + 0x4 ]):
-			tmp_name = str(uuid.uuid4()) + "_SYSTEM"
+			if (output != None):
+				tmp_name = os.path.join(os.path.curdir, output, str(uuid.uuid4()) + "_SYSTEM")
+			else:
+				tmp_name = str(uuid.uuid4()) + "_SYSTEM"
 			SYSTEM_filenames.append(tmp_name)
 			print("Potentially found SYSTEM at offset {} within searched chunk {}. Writing to {}".format(temp_SYSTEM, chunk_num, tmp_name))
 			#print(hexdump.hexdump(chunk[temp_SYSTEM - 0x2F : temp_SYSTEM + len(SYSTEM_pattern)]))
@@ -145,7 +156,10 @@ def search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, misaligned, cle
 		# potential SECURITY found
 		# print(hexdump.hexdump(chunk[temp_SECURITY - 0x30 : temp_SECURITY + len(SECURITY_pattern)]))
 		if (b"regf" in chunk[temp_SECURITY - 0x30 : temp_SECURITY - 0x30 + 0x4]):
-			tmp_name = str(uuid.uuid4()) + "_SECURITY"
+			if (output != None):
+				tmp_name = os.path.join(os.path.curdir, output, str(uuid.uuid4()) + "_SECURITY")
+			else:
+				tmp_name = str(uuid.uuid4()) + "_SECURITY"
 			SECURITY_filenames.append(tmp_name)
 			print("Potentially found SECURITY at offset {} within searched chunk {}. Writing to {}".format(temp_SECURITY, chunk_num, tmp_name))
 			with open(tmp_name, "wb") as SECURITY:
@@ -183,7 +197,7 @@ def check(no_auto_dump):
 		autodump(found[0], found[1], found[2], found[3])
 
 
-def main(f, f_size, clean, no_auto_dump):
+def main(f, f_size, clean, no_auto_dump, output):
 	# reading in chunks and scanning through the chunks, if we don't find anything, maybe our chunks were too small and the pattern was at the boundry of chunks so we need to seek by chunk / 2 and scan again
 
 	chunk_size = 4 * 1024 * 1024 # 4MiB
@@ -195,7 +209,7 @@ def main(f, f_size, clean, no_auto_dump):
 		f.seek(start)
 		chunk = f.read(chunk_size)
 		chunk_num += 1
-		if (search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean) == True):
+		if (search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean, output) == True):
 			break
 		start = end
 		end += chunk_size
@@ -203,7 +217,7 @@ def main(f, f_size, clean, no_auto_dump):
 	# finish last partial chunk just in case
 	f.seek(start)
 	chunk = f.read(f_size - start)
-	search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean)
+	search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean, output)
 
 	check(no_auto_dump)
 
@@ -216,7 +230,7 @@ def main(f, f_size, clean, no_auto_dump):
 		f.seek(start)
 		chunk = f.read(chunk_size)
 		chunk_num += 1
-		if (search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean) == True):
+		if (search_chunk(chunk, chunk_num, chunk_size, haystack, f_size, False, clean, output) == True):
 			break
 		start = end
 		end += chunk_size
@@ -227,18 +241,19 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
 			formatter_class=argparse.RawDescriptionHelpFormatter,
 			description='Process a large haystack looking for high value files from Windows. Specifically SAM, SECURITY, and SYSTEM hives.',
-			epilog=textwrap.dedent('''Examples:\npython3 needle.py /mnt/HTB/Bastion/file.vhd --hacky-clean\npython3 needle.py /mnt/VeritasNetbackup/dc.tar''')
+			epilog=textwrap.dedent('''Examples:\npython3 needle.py /mnt/HTB/Bastion/file.vhd --clean\npython3 needle.py /mnt/VeritasNetbackup/dc.tar''')
 	)
 	# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
-	parser.add_argument('--clean', action='store_true', default=False, help="Clean dirty on disk registry keys in a very hacky way that somehow works (usually needed for vhd)")
-	parser.add_argument('--no-auto-dump', action='store_true', default=False, help="Try to automatically use secretsdump if SAM and SYSTEM or SYSTEM and SECURITY are found")
+	parser.add_argument('-c','--clean', action='store_true', default=False, help="Clean dirty on disk registry keys in a very hacky way that somehow works (usually needed for vhd)")
+	parser.add_argument('-n','--no-auto-dump', action='store_true', default=False, help="Try to automatically use secretsdump if SAM and SYSTEM or SYSTEM and SECURITY are found")
+	parser.add_argument('-o','--output', dest="output", default=None, required=False, help='Output Directory for registry hives, default: current directory')
 	parser.add_argument('haystack', metavar='haystack', type=str, nargs='*', help='Haystack to parse')
 
 	args = parser.parse_args()
 
-	if (args.haystack != None):
+	if (args.haystack != []):
 		#do things
 		for haystack in args.haystack:
-			init(haystack, args.clean, args.no_auto_dump)
+			init(haystack, args.clean, args.no_auto_dump, args.output)
 	else:
 		parser.print_help()
