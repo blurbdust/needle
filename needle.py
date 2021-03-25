@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 
-import os, sys, uuid
+import os, sys, uuid, argparse, textwrap
 #import hexdump, re
 
-def init():
-	SAM_pattern		= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
-	SYSTEM_pattern		= b"\x00\x00\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
-	SECURITY_pattern	= b"e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00E\x00C\x00U\x00R\x00I\x00T\x00Y"
-	NTDS_pattern 		= b"\x20\x06\x00\x00\x00\x00\x00\x00"
-	SAM_filenames		= []
-	SYSTEM_filenames	= []
-	SECURITY_filenames	= []
-	NTDS_filenames		= []
+SAM_pattern		= b"\\\x00S\x00y\x00s\x00t\x00e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00A\x00M"
+SYSTEM_pattern		= b"\x00\x00\x00S\x00Y\x00S\x00T\x00E\x00M\x00\x00\x00\x00\x00"
+SECURITY_pattern	= b"e\x00m\x00R\x00o\x00o\x00t\x00\\\x00S\x00y\x00s\x00t\x00e\x00m\x003\x002\x00\\\x00C\x00o\x00n\x00f\x00i\x00g\x00\\\x00S\x00E\x00C\x00U\x00R\x00I\x00T\x00Y"
+NTDS_pattern 		= b"\x20\x06\x00\x00\x00\x00\x00\x00"
+SAM_filenames		= []
+SYSTEM_filenames	= []
+SECURITY_filenames	= []
+NTDS_filenames		= []
 
-	#	 SAM, SYSTEM, SECURITY, NTDS
-	found = [False, False, False, False]
+#	 SAM, SYSTEM, SECURITY, NTDS
+found = [False, False, False, False]
+
+
+def init(haystack):
 
 #if (len(sys.argv) < 2):
 #	print("Please provide a filename to run on")
@@ -26,6 +28,19 @@ def init():
 
 	f = open(haystack, 'rb')
 	f_size = os.stat(haystack).st_size
+	main(f, f_size)
+
+
+# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+def str2bool(v):
+	if isinstance(v, bool):
+		return v
+	if v.lower() in ('yes', 'true', 't', 'y', '1'):
+		return True
+	elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+		return False
+	else:
+		raise argparse.ArgumentTypeError('Boolean value expected.')
 
 # https://stackoverflow.com/questions/4664850/how-to-find-all-occurrences-of-a-substring
 def cust_findall(string, substring):
@@ -173,7 +188,7 @@ def check():
 		autodump(found[0], found[1], found[2], found[3])
 
 
-def main():
+def main(f, f_size):
 	# reading in chunks and scanning through the chunks, if we don't find anything, maybe our chunks were too small and the pattern was at the boundry of chunks so we need to seek by chunk / 2 and scan again
 
 	chunk_size = 4 * 1024 * 1024 # 4MiB
@@ -221,13 +236,14 @@ if __name__ == '__main__':
 	)
 	# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
 	parser.add_argument('--hacky-clean', type=str2bool, nargs='?', const=True, default=False, help="Clean dirty on disk registry keys in a very hacky way that somehow works (usually needed for vhd)")
-	parser.add_argument('--auto-dump', type=str2bool, nargs='?', const=True, default=True,, help="Try to automatically use secretsdump if SAM and SYSTEM or SYSTEM and SECURITY are found")
+	parser.add_argument('--auto-dump', type=str2bool, nargs='?', const=True, default=True, help="Try to automatically use secretsdump if SAM and SYSTEM or SYSTEM and SECURITY are found")
 	parser.add_argument('haystack', metavar='haystack', type=str, nargs='*', help='Haystack to parse')
 
 	args = parser.parse_args()
 
 	if (args.haystack != None):
 		#do things
-		init(haystack)
+		for haystack in args.haystack:
+			init(haystack)
 	else:
 		parser.print_help()
